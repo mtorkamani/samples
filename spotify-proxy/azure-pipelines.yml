@@ -1,0 +1,43 @@
+pool:
+  vmImage: 'ubuntu-16.04' # Other options: 'macOS-10.13', 'vs2017-win2016'
+
+variables:
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
+  GOROOT: '/usr/local/go1.11' # Go installation path
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
+  appPath: '$(GOPATH)/src/samples' # Path to the module's code
+  appName: 'spotify-proxy'
+
+steps:
+- script: |
+    echo $(appPath)
+    mkdir -p '$(GOBIN)'
+    mkdir -p '$(GOPATH)/pkg'
+    mkdir -p '$(appPath)'
+    shopt -s extglob
+    mv !(gopath) '$(appPath)'
+    echo '##vso[task.prependpath]$(GOBIN)'
+    echo '##vso[task.prependpath]$(GOROOT)/bin'
+  displayName: 'Set up the Go workspace'
+
+- script: go get -d
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'go get dependencies'
+
+- script: go build -v .
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'Build'
+
+- script: docker build -f Dockerfile -t $id/$(appName) .
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'docker build'
+  env:
+    id: $(dockerId)
+
+- script: |
+    docker login -u $id -p $pswd
+    docker push $id/$(appName)
+  env:
+    id: $(dockerId)
+    pswd: $(dockerPassword)
+  displayName: 'docker publish'

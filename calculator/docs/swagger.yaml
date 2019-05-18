@@ -1,0 +1,90 @@
+basePath: /
+definitions:
+  calc.Input:
+    properties:
+      firstNumber:
+        example: 1.2
+        type: number
+      secondNumber:
+        example: 3.4
+        type: number
+    required:
+    - firstNumber
+    - secondNumber
+    type: object
+  calc.Output:
+    properties:
+      result:
+        example: 4.6
+        type: number
+    required:
+    - result
+    type: object
+host: localhost:5000
+info:
+  contact:
+    email: support@samples.io
+    name: Samples API Support
+    url: http://www.samples.io/support
+  description: This service provides four main mathematical operations
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://www.samples.io/terms/
+  title: Swagger Samples/Calculator API
+  version: "1.0"
+paths:
+  /api/calc/{op}:
+    get:
+      consumes:
+      - application/json
+      description: Calculate runs requested operation on input coming in request body
+      operationId: Calculate
+      parameters:
+      - description: Operation add|sub|mul|div
+        in: path
+        name: op
+        required: true
+        type: string
+      - description: Json representaion of an Input object
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/calc.Input'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/calc.Output'
+            type: object
+        "400":
+          description: Provided op xyz is not valid
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Calculate runs requested operation
+  /ping:
+    get:
+      description: It is the health check endpoint
+      operationId: Ping
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Pong
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Ping the service and get 200 Ok response to make sure application is
+        up and running
+swagger: "2.0"

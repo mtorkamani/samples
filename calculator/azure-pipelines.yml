@@ -1,0 +1,53 @@
+# https://docs.microsoft.com/azure/devops/pipelines/languages/go
+pool:
+  vmImage: 'ubuntu-16.04' # Other options: 'macOS-10.13', 'vs2017-win2016'
+
+variables:
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
+  GOROOT: '/usr/local/go1.12.1' # Go installation path
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
+  appPath: '$(GOPATH)/src/samples' # Path to the module's code
+  appName: 'calculator'
+
+steps:
+- script: |
+    echo $(appPath)
+    mkdir -p '$(GOBIN)'
+    mkdir -p '$(GOPATH)/pkg'
+    mkdir -p '$(appPath)'
+    shopt -s extglob
+    mv !(gopath) '$(appPath)'
+    echo '##vso[task.prependpath]$(GOBIN)'
+    echo '##vso[task.prependpath]$(GOROOT)/bin'
+    export PATH="$PATH:/usr/sbin"
+    go get -u github.com/swaggo/swag/cmd/swag
+    go get -u github.com/swaggo/gin-swagger
+    go get -u github.com/swaggo/gin-swagger/swaggerFiles
+    go get -u github.com/alecthomas/template
+  displayName: 'Set up the Go workspace'
+
+- script: swag init
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'init swagger'
+  
+- script: go get -d
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'go get dependencies'
+
+- script: go build -v .
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'build'
+
+- script: docker build -f Dockerfile -t $id/$(appName) .
+  workingDirectory: '$(appPath)/$(appName)'
+  displayName: 'docker build'
+  env:
+    id: $(dockerId)
+
+- script: |
+    docker login -u $id -p $pswd
+    docker push $id/$(appName)
+  env:
+    id: $(dockerId)
+    pswd: $(dockerPassword)
+  displayName: 'docker publish'

@@ -1,2 +1,2 @@
 # samples
-Small sample app collection
+Small sample applications in Go
